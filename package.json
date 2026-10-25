@@ -1,0 +1,45 @@
+{
+  "name": "maillots-shop",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run tests/unit",
+    "test:e2e": "node tests/e2e/smoke.mjs",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:demo": "tsx prisma/demo.ts",
+    "create-admin": "tsx scripts/create-admin.ts",
+    "postinstall": "prisma generate",
+    "test:integration": "dotenv -e .env.test -- vitest run tests/integration"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.3",
+    "bcryptjs": "3.0.3",
+    "jose": "6.2.13",
+    "next": "15.5.28",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "server-only": "^0.0.1",
+    "stripe": "18.5.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.0",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "autoprefixer": "10.4.21",
+    "dotenv-cli": "^8.0.0",
+    "playwright": "^1.63.0",
+    "postcss": "8.5.6",
+    "prisma": "6.19.3",
+    "tailwindcss": "3.4.19",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vitest": "3.2.4"
+  }
+}

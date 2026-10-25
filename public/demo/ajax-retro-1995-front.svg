@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 625" width="1000" height="1250">
+<defs>
+  <radialGradient id="bg" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#26262b"/><stop offset="1" stop-color="#111114"/></radialGradient>
+  <linearGradient id="shade" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset=".25" stop-color="#000" stop-opacity="0"/><stop offset=".75" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".35"/></linearGradient>
+  <linearGradient id="light" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <clipPath id="body"><path d="M150 70 L215 48 Q250 74 285 48 L350 70 L432 128 L398 214 L360 196 L360 548 Q250 566 140 548 L140 196 L102 214 L68 128 Z"/></clipPath>
+  <filter id="drop" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".55"/></filter>
+</defs>
+<rect width="500" height="625" fill="url(#bg)"/>
+<g transform="translate(0 20)" filter="url(#drop)">
+  <path d="M150 70 L215 48 Q250 74 285 48 L350 70 L432 128 L398 214 L360 196 L360 548 Q250 566 140 548 L140 196 L102 214 L68 128 Z" fill="#FFFFFF"/>
+  <g clip-path="url(#body)"><rect x="250" y="0" width="250" height="600" fill="#D2122E"/>
+    <path d="M68 128 L102 214 L140 196 L140 180 L80 120 Z" fill="#D2122E" opacity=".9"/>
+    <path d="M432 128 L398 214 L360 196 L360 180 L420 120 Z" fill="#D2122E" opacity=".9"/>
+    <rect x="0" y="0" width="500" height="600" fill="url(#shade)"/><rect x="0" y="0" width="500" height="600" fill="url(#light)"/>
+    <path d="M250 70 L250 560" stroke="#000" stroke-opacity=".06" stroke-width="2"/>
+  </g>
+  <path d="M215 48 Q250 74 285 48 L285 60 L262 96 L238 96 L215 60 Z" fill="#D2122E"/><path d="M238 96 L262 96 L258 120 L242 120 Z" fill="#FFFFFF" stroke="#D2122E" stroke-width="3"/><g transform="translate(305 150)"><path d="M0 0 h34 v22 q0 18 -17 26 q-17 -8 -17 -26 Z" fill="#D2122E" opacity=".95"/><path d="M6 6 h22 v14 q0 11 -11 16 q-11 -5 -11 -16 Z" fill="#D2122E"/></g>
+         <g transform="translate(168 156)" opacity=".9"><path d="M0 12 l10 -12 l10 12 l-10 12 Z" fill="#D2122E"/></g>
+</g>
+</svg>
