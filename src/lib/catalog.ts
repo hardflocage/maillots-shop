@@ -30,8 +30,6 @@ export async function bestSellers(take = 8) {
 }
 
 /** Les promotions : prix barré supérieur au prix de vente */
-export async function saleProducts(take?: number) {
-  const ids = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM "Product" WHERE "isActive" = true AND "compareAtPrice" IS NOT NULL AND "compareAtPrice" > price ORDER BY "updatedAt" DESC LIMIT ${take ?? 500}`;
-  if (ids.length === 0) return [];
-  return listProducts({ id: { in: ids.map((r) => r.id) } });
+export function saleProducts(take?: number) {
+  return listProducts({ compareAtPrice: { gt: prisma.product.fields.price } }, { take, orderBy: [{ updatedAt: "desc" }] });
 }

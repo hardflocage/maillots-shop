@@ -4,11 +4,13 @@ Comptez environ 1 h. Vous aurez besoin de comptes **GitHub**, **Supabase**, **Ve
 
 ## 1. Base de données et photos : Supabase
 
+> **Déjà fait pour cette boutique** : les tables sont créées dans l'espace `maillots` du projet Supabase principal (à côté de Hard Flocage, sans y toucher), les données de base sont en place et le dossier photos `maillots-products` existe. Il reste seulement à copier les adresses de connexion (point 2) en ajoutant `schema=maillots`, puis à passer à l'étape 3.
+
 1. Sur [supabase.com](https://supabase.com) › **New project** (région : Paris `eu-west-3`). Notez le mot de passe de la base.
 2. **Project Settings › Database › Connection string › URI** :
-   - copiez l'URL **Transaction pooler** (port `6543`), ajoutez `?pgbouncer=true` à la fin → `DATABASE_URL`
-   - copiez l'URL **Session pooler** ou directe (port `5432`) → `DIRECT_URL`
-3. **Storage › New bucket** : nom `products`, cochez **Public bucket**.
+   - copiez l'URL **Transaction pooler** (port `6543`), ajoutez `?pgbouncer=true&schema=maillots` à la fin → `DATABASE_URL`
+   - copiez l'URL **Session pooler** ou directe (port `5432`), ajoutez `?schema=maillots` → `DIRECT_URL`
+3. **Storage › New bucket** : nom `maillots-products`, cochez **Public bucket**.
 4. **Project Settings › API** : copiez `Project URL` → `NEXT_PUBLIC_SUPABASE_URL` et la clé `service_role` → `SUPABASE_SERVICE_ROLE_KEY`
    (⚠️ clé secrète : uniquement dans Vercel, jamais dans le code).
 
@@ -35,7 +37,7 @@ npm run db:demo
 | `DATABASE_URL`, `DIRECT_URL` | étape 1 |
 | `AUTH_SECRET` | chaîne aléatoire : `openssl rand -base64 48` |
 | `NEXT_PUBLIC_SITE_URL` | `https://www.votre-domaine.fr` (sans `/` final) |
-| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET=products` | étape 1 |
+| `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_STORAGE_BUCKET=maillots-products` (facultatif, c'est la valeur par défaut) | étape 1 |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | étape 4 |
 | `RESEND_API_KEY`, `EMAIL_FROM` | étape 5 |
 | `CRON_SECRET` | chaîne aléatoire (Vercel l'envoie automatiquement à la tâche planifiée) |

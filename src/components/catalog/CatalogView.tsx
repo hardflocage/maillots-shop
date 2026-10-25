@@ -41,10 +41,7 @@ export async function CatalogView({ searchParams, category }: { searchParams: Se
   if (min != null) and.push({ price: { gte: min } });
   if (max != null) and.push({ price: { lte: max } });
   if (trending) and.push({ isFeatured: true });
-  if (promo) {
-    const ids = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM "Product" WHERE "compareAtPrice" IS NOT NULL AND "compareAtPrice" > price`;
-    and.push({ id: { in: ids.map((r) => r.id) } });
-  }
+  if (promo) and.push({ compareAtPrice: { gt: prisma.product.fields.price } });
   const where: Prisma.ProductWhereInput = { AND: and };
 
   const orderBy: Prisma.ProductOrderByWithRelationInput[] =

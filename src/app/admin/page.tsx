@@ -28,19 +28,23 @@ export default async function Dashboard() {
     prisma.order.count({ where: { status: { in: ["PAID", "PREPARING"] } } }),
     prisma.order.findMany({ where: { status: { not: "PENDING" } }, orderBy: { createdAt: "desc" }, take: 8 }),
     prisma.orderItem.groupBy({ by: ["productName"], where: { order: { status: { in: SOLD_STATUSES } } }, _sum: { quantity: true }, orderBy: { _sum: { quantity: "desc" } }, take: 8 }),
-    prisma.$queryRaw<{ id: string; size: string; stock: number; name: string; productId: string }[]>`
-      SELECT v.id, v.size, v.stock, p.name, p.id as "productId" FROM "Variant" v JOIN "Product" p ON p.id = v."productId"
-      WHERE p."isActive" = true AND v.stock <= v."lowStockThreshold" ORDER BY v.stock ASC, p.name LIMIT 30`,
+    prisma.variant.findMany({
+      where: { product: { isActive: true }, stock: { lte: prisma.variant.fields.lowStockThreshold } },
+      include: { product: { select: { name: true } } },
+      orderBy: [{ stock: "asc" }, { product: { name: "asc" } }],
+      take: 30,
+    }),
     prisma.product.count({ where: { isDemo: true } }),
-    prisma.$queryRaw<{ d: Date; total: bigint }[]>`
-      SELECT date_trunc('day', "paidAt") d, SUM(total - "refundedAmount")::bigint total FROM "Order"
-      WHERE "paidAt" >= ${d30} AND status IN ('PAID','PREPARING','SHIPPED','DELIVERED','PARTIALLY_REFUNDED','REFUNDED') GROUP BY 1 ORDER BY 1`,
+    prisma.order.findMany({
+      where: { paidAt: { gte: d30 }, status: { in: [...SOLD_STATUSES, "REFUNDED"] } },
+      select: { paidAt: true, total: true, refundedAmount: true },
+    }),
   ]);
 
   const series = Array.from({ length: 30 }, (_, i) => {
     const d = new Date(now.getTime() - (29 - i) * 86400_000); d.setHours(0, 0, 0, 0);
-    const hit = daily.find((x) => new Date(x.d).toDateString() === d.toDateString());
-    return { d, v: hit ? Number(hit.total) : 0 };
+    const v = daily.filter((o) => o.paidAt!.toDateString() === d.toDateString()).reduce((sum, o) => sum + o.total - o.refundedAmount, 0);
+    return { d, v };
   });
   const maxV = Math.max(...series.map((s) => s.v), 1);
 
@@ -111,7 +115,7 @@ export default async function Dashboard() {
             <Table head={["Produit", "Taille", "Stock"]}>
               {lowStock.map((v) => (
                 <tr key={v.id}>
-                  <td className="px-4 py-3"><Link href={`/admin/produits/${v.productId}`} className="hover:text-gold">{v.name}</Link></td>
+                  <td className="px-4 py-3"><Link href={`/admin/produits/${v.productId}`} className="hover:text-gold">{v.product.name}</Link></td>
                   <td className="px-4 py-3">{v.size}</td>
                   <td className={`px-4 py-3 font-semibold ${v.stock <= 0 ? "text-signal" : "text-gold"}`}>{v.stock <= 0 ? "Rupture" : v.stock}</td>
                 </tr>
