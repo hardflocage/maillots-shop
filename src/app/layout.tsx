@@ -19,6 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = { themeColor: "#09090A", width: "device-width", initialScale: 1 };
+// Toutes les pages lisent la base (paramètres, stocks) : rendu à la demande, jamais au build.
+export const dynamic = "force-dynamic";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
