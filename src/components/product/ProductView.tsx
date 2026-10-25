@@ -9,6 +9,7 @@ import { IconCheck, IconMinus, IconPlus, IconTruck } from "@/components/ui/Icons
 import { ProductGallery, type GalleryImage } from "./ProductGallery";
 import { FavoriteButton } from "./FavoriteButton";
 import { ShareButtons } from "./ShareButtons";
+import { SizeGuideButton } from "./SizeGuide";
 
 export type ProductViewData = {
   id: string;
@@ -27,7 +28,7 @@ export type ProductViewData = {
   players: { id: string; name: string; number: number }[];
 };
 
-export function ProductView({ product, isFavorite, loggedIn, header, shippingNote }: { product: ProductViewData; isFavorite: boolean; loggedIn: boolean; header: React.ReactNode; shippingNote: string | null }) {
+export function ProductView({ product, isFavorite, loggedIn, header, shippingNote, sizeGuideHtml }: { product: ProductViewData; isFavorite: boolean; loggedIn: boolean; header: React.ReactNode; shippingNote: string | null; sizeGuideHtml: string | null }) {
   const { add } = useCart();
   const [active, setActive] = useState(0);
   const [variantId, setVariantId] = useState<string | null>(null);
@@ -113,7 +114,7 @@ export function ProductView({ product, isFavorite, loggedIn, header, shippingNot
         <div className="mt-8 scroll-mt-24" ref={sizeRef}>
           <div className="mb-3 flex items-center justify-between">
             <p className="label mb-0">Taille {variant && <span className="ml-1 normal-case tracking-normal text-bone">: {variant.size}</span>}</p>
-            <Link href="/guide-des-tailles" className="text-xs text-bone-muted underline underline-offset-4 hover:text-bone">Guide des tailles</Link>
+            {sizeGuideHtml ? <SizeGuideButton html={sizeGuideHtml} /> : <Link href="/guide-des-tailles" className="text-xs text-bone-muted underline underline-offset-4 hover:text-bone">Guide des tailles</Link>}
           </div>
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6" role="radiogroup" aria-label="Choix de la taille">
             {product.variants.map((v) => {

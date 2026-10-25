@@ -7,9 +7,12 @@ import { primaryImage } from "@/lib/products";
 import { ProductRail } from "@/components/product/ProductRail";
 import { NewsletterForm } from "@/components/layout/NewsletterForm";
 import { IconArrowRight, IconReturn, IconShield, IconShirt, IconStar, IconTruck } from "@/components/ui/Icons";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatPrice } from "@/lib/format";
+import { activePaymentMethods } from "@/lib/content";
+import { KIT_LABELS } from "@/lib/labels";
+import { backImage, isOnSale } from "@/lib/products";
+import { QuickViewButton } from "@/components/product/QuickView";
 
-export const revalidate = 60;
 
 export default async function HomePage() {
   const [settings, newest, featured, best, sales, leagues, national, retro, reviews] = await Promise.all([
@@ -18,14 +21,19 @@ export default async function HomePage() {
     listProducts({ isFeatured: true }, { take: 8 }),
     bestSellers(8),
     saleProducts(8),
-    prisma.category.findMany({ where: { isActive: true, showOnHome: true, type: { in: ["LEAGUE", "COMPETITION"] } }, orderBy: { sortOrder: "asc" }, include: { products: { where: { isActive: true }, take: 1, orderBy: { createdAt: "desc" }, include: { images: true } }, _count: { select: { products: { where: { isActive: true } } } } } }),
+    prisma.category.findMany({ where: { isActive: true, showOnHome: true }, orderBy: { sortOrder: "asc" }, include: { products: { where: { isActive: true }, take: 1, orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }], include: { images: true } }, _count: { select: { products: { where: { isActive: true } } } } } }),
     listProducts({ categories: { some: { type: "NATIONAL" } } }, { take: 8 }),
     listProducts({ categories: { some: { type: "RETRO" } } }, { take: 8 }),
     prisma.review.findMany({ where: { status: "APPROVED" }, include: { user: { select: { name: true } }, product: { select: { name: true, slug: true } } }, orderBy: { createdAt: "desc" }, take: 6 }),
   ]);
 
-  const heroProducts = (featured.length ? featured : newest).slice(0, 3);
+  const heroProduct = (featured.length ? featured : newest).find((p) => p.images.length > 0) ?? null;
   const heroImage = settings.heroImageUrl;
+  const payments = activePaymentMethods(settings);
+  // Collections : uniquement celles qui ont des maillots ou une photo (jamais de case vide)
+  const collections = leagues.filter((c) => c._count.products > 0 || c.imageUrl);
+  const leagueNames = leagues.filter((c) => c.type === "LEAGUE" || c.type === "COMPETITION");
+  const catalogEmpty = newest.length === 0;
 
   return (
     <>
@@ -56,32 +64,17 @@ export default async function HomePage() {
               <Link href="/boutique?tri=nouveautes" className="btn-ghost px-8 py-4 text-[13px]">Nouveautés</Link>
             </div>
           </div>
-          {!heroImage && heroProducts.length > 0 && (
-            <div className="relative mx-auto hidden aspect-square w-full max-w-[560px] sm:block" aria-hidden>
-              {heroProducts.map((p, i) => {
-                const img = primaryImage(p.images);
-                if (!img) return null;
-                const pos = [
-                  "left-[18%] top-[6%] z-20 w-[64%] rotate-0",
-                  "left-0 top-[24%] z-10 w-[46%] -rotate-[8deg] opacity-70",
-                  "right-0 top-[28%] z-10 w-[46%] rotate-[8deg] opacity-70",
-                ][i];
-                return (
-                  <div key={p.id} className={`absolute aspect-[4/5] overflow-hidden rounded-3xl border border-white/5 bg-ink-800 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] animate-fade-up ${pos}`} style={{ animationDelay: `${150 + i * 120}ms` }}>
-                    <Image src={img} alt="" fill priority={i === 0} sizes="(min-width:1024px) 360px, 60vw" className="object-cover" unoptimized={img.endsWith(".svg")} />
-                  </div>
-                );
-              })}
-            </div>
+          {heroProduct && (
+            <HeroJersey product={heroProduct} />
           )}
         </div>
       </section>
 
       {/* BANDEAU CHAMPIONNATS */}
-      {leagues.length > 0 && (
+      {leagueNames.length > 0 && !catalogEmpty && (
         <div className="overflow-hidden border-y border-ink-600 bg-ink-900 py-5">
           <div className="flex w-max animate-marquee gap-12 whitespace-nowrap">
-            {[...leagues, ...leagues, ...leagues, ...leagues].map((c, i) => (
+            {[...leagueNames, ...leagueNames, ...leagueNames, ...leagueNames].map((c, i) => (
               <Link key={i} href={`/collections/${c.slug}`} className="font-display text-2xl uppercase tracking-wider text-bone-dim transition hover:text-bone">
                 {c.name} <span className="ml-12 text-gold">✦</span>
               </Link>
@@ -94,20 +87,32 @@ export default async function HomePage() {
       <ProductRail eyebrow="Les plus commandés" title="Meilleures ventes" href="/boutique?tri=ventes" products={best} />
       <ProductRail eyebrow="En ce moment" title="Tendances" href="/boutique?tendance=1" products={featured} />
 
+      {catalogEmpty && (
+        <section className="container-x py-16 sm:py-24">
+          <div className="relative overflow-hidden rounded-3xl border border-ink-600 bg-gradient-to-br from-ink-800 to-ink-900 p-8 text-center sm:p-16">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_0%,rgba(214,179,106,0.12),transparent_70%)]" />
+            <p className="eyebrow relative mb-4">Ouverture prochaine</p>
+            <h2 className="h-display relative text-4xl sm:text-6xl">Le vestiaire se remplit</h2>
+            <p className="relative mx-auto mt-5 max-w-lg leading-relaxed text-bone-muted">Les premiers maillots arrivent très bientôt. Inscris-toi pour être prévenu de leur mise en ligne.</p>
+          </div>
+        </section>
+      )}
+
       {/* COLLECTIONS PAR CHAMPIONNAT */}
-      {leagues.length > 0 && (
+      {collections.length > 0 && (
         <section className="container-x py-14 sm:py-20">
           <p className="eyebrow mb-3">Collections</p>
-          <h2 className="h-display mb-10 text-4xl sm:text-5xl lg:text-6xl">Par championnat</h2>
+          <h2 className="h-display mb-10 text-4xl sm:text-5xl lg:text-6xl">Choisis ton camp</h2>
           <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
-            {leagues.map((c, i) => {
-              const img = c.products[0] ? primaryImage(c.products[0].images) : null;
+            {collections.map((c, i) => {
+              const img = c.imageUrl ?? (c.products[0] ? primaryImage(c.products[0].images) : null);
               return (
                 <Link key={c.id} href={`/collections/${c.slug}`} className={`group relative overflow-hidden rounded-2xl border border-ink-600 bg-gradient-to-br from-ink-700 to-ink-900 ${i === 0 ? "col-span-2 aspect-[2/1] lg:col-span-1 lg:row-span-2 lg:aspect-auto" : "aspect-[4/3]"}`}>
-                  {img && <Image src={img} alt="" fill sizes="(min-width:1024px) 33vw, 50vw" className="object-cover opacity-50 transition duration-700 group-hover:scale-105 group-hover:opacity-70" unoptimized={img.endsWith(".svg")} />}
+                  {img && <Image src={img} alt="" fill sizes="(min-width:1024px) 33vw, 50vw" className="object-cover opacity-60 transition duration-700 group-hover:scale-105 group-hover:opacity-80" unoptimized={img.endsWith(".svg")} />}
                   <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/30 to-transparent" />
+                  <span className="absolute right-4 top-4 rounded-full border border-bone/20 p-2 text-bone opacity-0 transition group-hover:opacity-100"><IconArrowRight width={16} height={16} /></span>
                   <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-bone-muted">{c._count.products} maillot{c._count.products > 1 ? "s" : ""}</p>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-bone-muted">{c._count.products > 0 ? `${c._count.products} maillot${c._count.products > 1 ? "s" : ""}` : "Bientôt disponible"}</p>
                     <p className="h-display mt-1 text-2xl sm:text-4xl">{c.name}</p>
                   </div>
                 </Link>
@@ -153,10 +158,10 @@ export default async function HomePage() {
       <section className="container-x py-14">
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-ink-600 bg-ink-600 lg:grid-cols-4">
           {[
-            { icon: IconShield, t: "Paiement sécurisé", d: "Carte, Apple Pay et Google Pay via Stripe. Aucune donnée bancaire stockée chez nous." },
+            { icon: IconShield, t: "Paiement sécurisé", d: `${payments.length ? `${payments.join(", ")} via Stripe.` : "Paiement traité par Stripe."} Aucune donnée bancaire stockée chez nous.` },
             { icon: IconShirt, t: "Flocage personnalisé", d: "Ton nom et ton numéro, avec un récapitulatif avant paiement." },
             { icon: IconTruck, t: "Suivi de commande", d: "Numéro de suivi transmis dès l'expédition." },
-            { icon: IconReturn, t: "Retours", d: "Conditions détaillées dans notre politique de retour." },
+            { icon: IconReturn, t: `Retours sous ${settings.returnDays} jours`, d: "Pour les articles non floqués. Procédure simple depuis ton espace client." },
           ].map(({ icon: I, t, d }) => (
             <div key={t} className="bg-ink-900 p-6 sm:p-8">
               <I className="text-gold" />
@@ -168,14 +173,11 @@ export default async function HomePage() {
       </section>
 
       {/* AVIS CLIENTS : uniquement des avis réels, vérifiés et modérés */}
+      {reviews.length > 0 && (
       <section className="container-x py-14 sm:py-20">
         <p className="eyebrow mb-3">Ils les portent</p>
         <h2 className="h-display mb-10 text-4xl sm:text-5xl lg:text-6xl">Avis clients</h2>
-        {reviews.length === 0 ? (
-          <div className="card p-8 text-bone-muted">
-            Les avis de nos clients apparaîtront ici. Seuls les acheteurs ayant reçu leur commande peuvent publier un avis, après vérification.
-          </div>
-        ) : (
+        {(
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {reviews.map((r) => (
               <figure key={r.id} className="card flex flex-col p-6">
@@ -192,8 +194,10 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+      )}
 
       {/* PRÉSENTATION */}
+      {settings.aboutText.trim() && (
       <section className="container-x py-14 sm:py-20">
         <div className="grid gap-10 rounded-3xl border border-ink-600 bg-gradient-to-br from-ink-800 to-ink-900 p-8 sm:p-14 lg:grid-cols-2">
           <div>
@@ -206,6 +210,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* NEWSLETTER */}
       <section className="container-x pb-10 pt-6">
@@ -222,5 +227,38 @@ export default async function HomePage() {
         </div>
       </section>
     </>
+  );
+}
+
+type HeroProduct = Awaited<ReturnType<typeof listProducts>>[number];
+
+/** Maillot vedette de l'accueil : grande photo, devant/dos au survol, prix et achat direct. */
+function HeroJersey({ product }: { product: HeroProduct }) {
+  const front = primaryImage(product.images);
+  const back = backImage(product.images);
+  const sale = isOnSale(product);
+  const svg = (u: string | null) => Boolean(u?.endsWith(".svg"));
+  return (
+    <div className="relative mx-auto w-full max-w-[520px] animate-fade-up [animation-delay:150ms]">
+      <div className="absolute -inset-10 -z-10 rounded-full bg-[radial-gradient(circle,rgba(214,179,106,0.22),transparent_65%)] blur-2xl" aria-hidden />
+      <div className="group relative">
+        <Link href={`/maillot/${product.slug}`} className="relative block aspect-[4/5] overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-b from-ink-700 to-ink-800 shadow-[0_50px_100px_-30px_rgba(0,0,0,0.9)]">
+          {front && <Image src={front} alt={`${product.name} : devant`} fill priority sizes="(min-width:1024px) 520px, 90vw" className={`object-cover transition duration-700 group-hover:scale-[1.03] ${back ? "group-hover:opacity-0" : ""}`} unoptimized={svg(front)} />}
+          {back && <Image src={back} alt={`${product.name} : dos`} fill sizes="(min-width:1024px) 520px, 90vw" className="object-cover opacity-0 transition duration-700 group-hover:scale-[1.03] group-hover:opacity-100" unoptimized={svg(back)} />}
+          <span className="absolute left-5 top-5 rounded-full bg-ink/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-gold backdrop-blur">Maillot vedette</span>
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink via-ink/80 to-transparent p-5 pt-20 sm:p-7 sm:pt-24">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-bone-muted">{product.club} · {product.season} · {KIT_LABELS[product.kitType]}</p>
+            <p className="mt-1 font-display text-2xl uppercase leading-none sm:text-3xl">{product.name}</p>
+            <p className="mt-2 flex items-baseline gap-2">
+              <span className={`text-xl font-semibold ${sale ? "text-signal" : ""}`}>{formatPrice(product.price)}</span>
+              {sale && <span className="text-sm text-bone-dim line-through">{formatPrice(product.compareAtPrice!)}</span>}
+            </p>
+          </div>
+        </Link>
+        <div className="absolute bottom-5 right-5 flex items-center gap-2 sm:bottom-7 sm:right-7">
+          <QuickViewButton slug={product.slug} name={product.name} />
+        </div>
+      </div>
+    </div>
   );
 }

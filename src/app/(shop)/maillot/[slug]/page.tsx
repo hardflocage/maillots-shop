@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { renderMarkdown } from "@/lib/markdown";
+import { fillPlaceholders, loadPlaceholderValues } from "@/lib/content";
 import { getCurrentUser } from "@/lib/auth";
 import { listProducts } from "@/lib/catalog";
 import { formatDate, formatPrice } from "@/lib/format";
@@ -43,14 +45,17 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await getProduct((await params).slug);
   if (!product) notFound();
 
-  const [user, related, shipping] = await Promise.all([
+  const [user, related, shipping, guide, placeholders] = await Promise.all([
     getCurrentUser(),
     listProducts(
       { id: { not: product.id }, OR: [{ club: product.club }, { categories: { some: { id: { in: product.categories.map((c) => c.id) } } } }] },
       { take: 8, orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }] },
     ),
     prisma.shippingMethod.findFirst({ where: { isActive: true }, orderBy: { price: "asc" } }),
+    prisma.page.findUnique({ where: { slug: "guide-des-tailles" } }),
+    loadPlaceholderValues(),
   ]);
+  const sizeGuideHtml = guide ? renderMarkdown(fillPlaceholders(guide.content, placeholders)) : null;
   const isFavorite = user ? Boolean(await prisma.favorite.findUnique({ where: { userId_productId: { userId: user.id, productId: product.id } } })) : false;
 
   const images = orderedImages(product.images).map((i) => ({
@@ -118,6 +123,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           isFavorite={isFavorite}
           loggedIn={Boolean(user)}
           shippingNote={shippingNote}
+          sizeGuideHtml={sizeGuideHtml}
           product={{
             id: product.id,
             slug: product.slug,

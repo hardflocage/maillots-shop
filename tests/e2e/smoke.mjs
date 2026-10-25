@@ -109,6 +109,53 @@ try {
   if (!page.url().includes("/compte/connexion")) fail(`Un client a accès à /admin (${blocked?.status()})`);
   ok("Administration inaccessible à un client");
 
+  console.log("Boutique (ordinateur)");
+  const desk = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await desk.addInitScript(() => localStorage.setItem("mlt_consent_v1", JSON.stringify({ necessary: true, analytics: false, date: "e2e" })));
+  const d = await desk.newPage();
+  d.on("pageerror", (e) => errors.push(e.message));
+  await d.goto(BASE, { waitUntil: "networkidle" });
+  if (!(await d.getByText("Maillot vedette").isVisible())) fail("Maillot vedette absent de l'accueil");
+  if (await d.getByText(/Présentez ici votre boutique|À COMPLÉTER/).count()) fail("Texte provisoire visible sur l'accueil");
+  await d.screenshot({ path: `${SHOTS}/accueil-ordinateur.png` });
+  ok("Accueil : maillot vedette, aucun texte provisoire");
+
+  await d.goto(`${BASE}/boutique`, { waitUntil: "networkidle" });
+  const card = d.locator("main .group").filter({ has: d.getByRole("button", { name: /Aperçu rapide/ }) }).first();
+  await card.hover();
+  await card.getByRole("button", { name: /Aperçu rapide/ }).click();
+  const dialog = d.getByRole("dialog").filter({ has: d.getByText("Taille", { exact: true }) });
+  await dialog.waitFor();
+  await dialog.getByRole("button", { name: /Ajouter au panier/ }).click();
+  if (!(await dialog.getByText("Choisis ta taille.").isVisible())) fail("Vue rapide : pas de message sans taille");
+  await dialog.locator("button:not([disabled])").filter({ hasText: /^(S|M|L|XL|XXL|\d+ ans)$/ }).first().click();
+  await d.screenshot({ path: `${SHOTS}/vue-rapide.png` });
+  await dialog.getByRole("button", { name: /Ajouter au panier/ }).click();
+  const drawer = d.getByRole("dialog", { name: "Panier" });
+  await drawer.getByRole("link", { name: /Commander · / }).waitFor({ timeout: 8000 }).catch(() => fail("Panier : bouton Commander avec montant absent"));
+  if (!(await drawer.getByText("Livraison", { exact: true }).isVisible())) fail("Panier : frais de livraison absents");
+  await d.waitForTimeout(400);
+  await d.screenshot({ path: `${SHOTS}/panier-lateral.png` });
+  ok("Vue rapide : taille obligatoire, ajout au panier, total et livraison dans le panier");
+
+  await d.goto(`${BASE}/maillot/psg-domicile-2025-26`, { waitUntil: "networkidle" });
+  await d.getByRole("button", { name: "Guide des tailles" }).click();
+  const guide = d.getByRole("dialog", { name: "Guide des tailles" });
+  await guide.getByText("Adultes").waitFor();
+  if (!d.url().includes("/maillot/")) fail("Le guide des tailles a quitté la fiche produit");
+  await d.screenshot({ path: `${SHOTS}/guide-des-tailles.png` });
+  ok("Guide des tailles ouvert sans quitter la fiche");
+
+  for (const slug of ["mentions-legales", "cgv", "livraison", "retours", "confidentialite"]) {
+    await d.goto(`${BASE}/pages/${slug}`);
+    const body = await d.locator("main").innerText();
+    if (/À COMPLÉTER|\{\{/.test(body)) fail(`Page ${slug} : texte provisoire ou balise visible`);
+  }
+  await d.goto(`${BASE}/pages/livraison`);
+  if (!(await d.getByText("Livraison à domicile").first().isVisible())) fail("Politique de livraison sans les vrais modes de livraison");
+  ok("Pages légales sans texte provisoire, livraison réelle affichée");
+  await desk.close();
+
   if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
     console.log("Administration (ordinateur)");
     const admin = await browser.newContext({ viewport: { width: 1440, height: 900 } });

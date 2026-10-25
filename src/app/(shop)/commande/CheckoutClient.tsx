@@ -16,7 +16,7 @@ type Defaults = { email: string; firstName: string; lastName: string; phone: str
 
 const COUNTRIES = [["FR", "France"], ["BE", "Belgique"], ["CH", "Suisse"], ["LU", "Luxembourg"], ["MC", "Monaco"], ["DE", "Allemagne"], ["ES", "Espagne"], ["IT", "Italie"], ["NL", "Pays-Bas"], ["PT", "Portugal"]];
 
-export function CheckoutClient({ methods, defaults, loggedIn, paymentsEnabled }: { methods: Method[]; defaults: Defaults; loggedIn: boolean; paymentsEnabled: boolean }) {
+export function CheckoutClient({ methods, defaults, loggedIn, paymentsEnabled, paymentMethods }: { methods: Method[]; defaults: Defaults; loggedIn: boolean; paymentsEnabled: boolean; paymentMethods: string[] }) {
   const { lines, ready } = useCart();
   const params = useSearchParams();
   const [methodId, setMethodId] = useState(methods[0]?.id ?? null);
@@ -196,7 +196,7 @@ export function CheckoutClient({ methods, defaults, loggedIn, paymentsEnabled }:
             <button type="submit" disabled={submitting || !quote || quote.hasErrors || !methodId || !paymentsEnabled} className="btn-primary w-full py-4 text-[13px]">
               {submitting ? "Redirection vers le paiement…" : quote ? `Payer ${formatPrice(quote.total)}` : "Calcul…"}
             </button>
-            <p className="flex items-center justify-center gap-2 text-center text-xs text-bone-dim"><IconShield width={16} height={16} /> Paiement sécurisé Stripe · Carte, Apple Pay, Google Pay</p>
+            <p className="flex items-center justify-center gap-2 text-center text-xs text-bone-dim"><IconShield width={16} height={16} /> Paiement sécurisé Stripe{paymentMethods.length > 0 && ` · ${paymentMethods.join(", ")}`}</p>
           </div>
         </aside>
       </form>

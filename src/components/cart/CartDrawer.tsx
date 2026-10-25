@@ -54,13 +54,19 @@ export function CartDrawer() {
               {quote && quote.discountTotal > 0 && (
                 <div className="mb-1 flex justify-between text-sm text-pitch"><span>Réductions</span><span>−{formatPrice(quote.discountTotal)}</span></div>
               )}
-              <div className="flex items-baseline justify-between">
-                <span className="text-bone-muted">Sous-total</span>
-                <span className={`text-xl font-semibold ${loading ? "opacity-50" : ""}`}>{quote ? formatPrice(quote.subtotal - quote.discountTotal) : "…"}</span>
+              <div className={`space-y-1 text-sm ${loading ? "opacity-50" : ""}`}>
+                <div className="flex justify-between"><span className="text-bone-muted">Sous-total</span><span>{quote ? formatPrice(quote.subtotal - quote.discountTotal) : "…"}</span></div>
+                {quote?.shippingMethodId && (
+                  <div className="flex justify-between"><span className="text-bone-muted">Livraison</span><span>{quote.shipping === 0 ? <span className="text-pitch">Offerte</span> : formatPrice(quote.shipping)}</span></div>
+                )}
               </div>
-              <p className="mt-1 text-xs text-bone-dim">Livraison calculée à l&apos;étape suivante.</p>
+              <div className="mt-3 flex items-baseline justify-between border-t border-ink-600 pt-3">
+                <span className="font-semibold">Total</span>
+                <span className={`text-2xl font-semibold ${loading ? "opacity-50" : ""}`}>{quote ? formatPrice(quote.total) : "…"}</span>
+              </div>
+              <p className="mt-1 text-xs text-bone-dim">TTC. {quote?.shippingMethodId ? "Autres modes de livraison au choix à l'étape suivante." : "Livraison choisie à l'étape suivante."}</p>
               <div className="mt-4 grid gap-2">
-                <Link href="/commande" onClick={closeDrawer} className={`btn-primary w-full ${quote?.hasErrors ? "pointer-events-none opacity-50" : ""}`} aria-disabled={quote?.hasErrors}>Commander</Link>
+                <Link href="/commande" onClick={closeDrawer} className={`btn-primary w-full py-4 text-sm ${quote?.hasErrors ? "pointer-events-none opacity-50" : ""}`} aria-disabled={quote?.hasErrors}>Commander{quote && !quote.hasErrors ? ` · ${formatPrice(quote.total)}` : ""}</Link>
                 <Link href="/panier" onClick={closeDrawer} className="btn-ghost w-full">Voir le panier</Link>
               </div>
             </div>

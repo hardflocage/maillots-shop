@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { integrationStatus } from "@/lib/settings";
+import { getSettings, integrationStatus } from "@/lib/settings";
 import { SOLD_STATUSES } from "@/lib/catalog";
 import { formatDateTime, formatPrice } from "@/lib/format";
 import { ORDER_STATUS_LABELS } from "@/lib/labels";
@@ -20,7 +20,7 @@ export default async function Dashboard() {
   const year = new Date(now.getFullYear(), 0, 1);
   const integ = integrationStatus();
 
-  const [today, month, ytd, all, toShip, latest, top, lowStock, demoCount, daily] = await Promise.all([
+  const [today, month, ytd, all, toShip, latest, top, lowStock, demoCount, daily, settings, activeProducts, productsWithoutPhotos, shippingCount] = await Promise.all([
     revenueSince(day),
     revenueSince(d30),
     revenueSince(year),
@@ -39,7 +39,25 @@ export default async function Dashboard() {
       where: { paidAt: { gte: d30 }, status: { in: [...SOLD_STATUSES, "REFUNDED"] } },
       select: { paidAt: true, total: true, refundedAmount: true },
     }),
+    getSettings(),
+    prisma.product.count({ where: { isActive: true, isDemo: false } }),
+    prisma.product.count({ where: { isActive: true, images: { none: { kind: "FRONT" } } } }),
+    prisma.shippingMethod.count({ where: { isActive: true } }),
   ]);
+
+  // Liste « avant l'ouverture » : uniquement des vérifications réelles
+  const launch = [
+    { ok: activeProducts > 0, label: "Au moins un maillot en ligne", href: "/admin/produits/nouveau" },
+    { ok: productsWithoutPhotos === 0, label: productsWithoutPhotos ? `${productsWithoutPhotos} maillot(s) sans photo de face` : "Tous les maillots ont une photo de face", href: "/admin/produits" },
+    { ok: integ.stripe, label: "Paiement Stripe branché", href: "/admin/parametres" },
+    { ok: integ.stripeWebhook, label: "Webhook Stripe (confirmation des paiements)", href: "/admin/parametres" },
+    { ok: integ.email, label: "E-mails de commande (Resend)", href: "/admin/parametres" },
+    { ok: shippingCount > 0, label: "Au moins un mode de livraison actif", href: "/admin/livraison" },
+    { ok: Boolean(settings.contactEmail), label: "E-mail de contact public", href: "/admin/parametres" },
+    { ok: Boolean(settings.legalName && settings.legalAddress && settings.siret && settings.publicationDirector), label: "Mentions légales (raison sociale, adresse, SIRET, directeur de publication)", href: "/admin/parametres" },
+    { ok: Boolean(settings.mediator), label: "Médiateur de la consommation", href: "/admin/parametres" },
+  ];
+  const launchDone = launch.filter((l) => l.ok).length;
 
   const series = Array.from({ length: 30 }, (_, i) => {
     const d = new Date(now.getTime() - (29 - i) * 86400_000); d.setHours(0, 0, 0, 0);
@@ -67,6 +85,26 @@ export default async function Dashboard() {
           </Alert>
         )}
       </div>
+
+      {launchDone < launch.length && (
+        <section className="card p-5">
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <h2 className="font-semibold">Avant l&apos;ouverture</h2>
+            <span className="text-sm text-bone-dim">{launchDone}/{launch.length}</span>
+          </div>
+          <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-ink-600"><div className="h-full rounded-full bg-gold" style={{ width: `${(launchDone / launch.length) * 100}%` }} /></div>
+          <ul className="grid gap-2 text-sm sm:grid-cols-2">
+            {launch.map((l) => (
+              <li key={l.label}>
+                <Link href={l.href} className="flex items-start gap-2.5 hover:text-bone">
+                  <span className={l.ok ? "text-pitch" : "text-bone-dim"}>{l.ok ? "✓" : "○"}</span>
+                  <span className={l.ok ? "text-bone-dim line-through" : "text-bone-muted"}>{l.label}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Aujourd'hui" value={formatPrice(today.revenue)} hint={`${today.count} commande(s)`} />

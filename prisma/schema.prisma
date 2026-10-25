@@ -123,6 +123,8 @@ model Category {
   sortOrder   Int          @default(0)
   isActive    Boolean      @default(true)
   showOnHome  Boolean      @default(true)
+  /// Photo de la collection (page d'accueil, en-tête de collection)
+  imageUrl    String?
   products    Product[]
   createdAt   DateTime     @default(now())
 }
@@ -330,13 +332,30 @@ model ShopSettings {
   heroImageUrl       String?
   announcement       String?
   aboutTitle         String   @default("Notre boutique")
-  aboutText          String   @default("Présentez ici votre boutique, votre histoire et votre engagement. Ce texte est modifiable dans Administration > Paramètres.")
+  aboutText          String   @default("")
   contactEmail       String?
   contactPhone       String?
   contactAddress     String?
   instagramUrl       String?
   tiktokUrl          String?
   stockAlertEmail    String?
+  // Informations légales (mentions légales, CGV)
+  legalName           String?
+  legalForm           String?
+  legalAddress        String?
+  siret               String?
+  vatNumber           String?
+  publicationDirector String?
+  hostInfo            String   @default("Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis")
+  mediator            String?
+  /// Délai de retour accordé (jours après réception)
+  returnDays          Int      @default(14)
+  returnAddress       String?
+  /// Moyens de paiement réellement activés dans Stripe (affichage des logos)
+  payCard             Boolean  @default(true)
+  payApplePay         Boolean  @default(false)
+  payGooglePay        Boolean  @default(false)
+  payPaypal           Boolean  @default(false)
   updatedAt          DateTime @updatedAt
 }
 
