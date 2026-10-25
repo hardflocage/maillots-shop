@@ -3,10 +3,13 @@ import { getSettings } from "@/lib/settings";
 import { NewsletterForm } from "./NewsletterForm";
 import { IconInstagram, IconTiktok } from "@/components/ui/Icons";
 import { CookieSettingsLink } from "./CookieConsent";
+import { PaymentBadges } from "@/components/ui/PaymentBadges";
+import { activePaymentMethods } from "@/lib/content";
 
 export async function Footer() {
   const s = await getSettings();
   const year = new Date().getFullYear();
+  const payments = activePaymentMethods(s);
   return (
     <footer className="mt-24 border-t border-ink-600 bg-ink-900">
       <div className="container-x grid gap-12 py-16 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
@@ -59,7 +62,12 @@ export async function Footer() {
       <div className="border-t border-ink-600">
         <div className="container-x flex flex-col gap-3 py-6 text-xs text-bone-dim sm:flex-row sm:items-center sm:justify-between">
           <p>© {year} {s.shopName}. Tous droits réservés.</p>
-          <p>Paiement sécurisé par Stripe · Carte bancaire, Apple Pay, Google Pay</p>
+          {payments.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3">
+              <span>Paiement sécurisé par Stripe</span>
+              <PaymentBadges methods={payments} />
+            </div>
+          )}
         </div>
       </div>
     </footer>

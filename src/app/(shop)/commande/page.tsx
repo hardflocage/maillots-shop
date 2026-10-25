@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { CheckoutClient } from "./CheckoutClient";
+import { getSettings } from "@/lib/settings";
+import { activePaymentMethods } from "@/lib/content";
 
 export const metadata: Metadata = { title: "Commande", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -15,6 +17,7 @@ export default async function CheckoutPage() {
   return (
     <CheckoutClient
       paymentsEnabled={Boolean(process.env.STRIPE_SECRET_KEY)}
+      paymentMethods={activePaymentMethods(await getSettings())}
       methods={methods.map((m) => ({ id: m.id, name: m.name, description: m.description, type: m.type, price: m.price, freeOver: m.freeOver, deliveryTime: m.deliveryTime }))}
       defaults={{
         email: user?.email ?? "",

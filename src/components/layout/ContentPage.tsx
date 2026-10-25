@@ -1,12 +1,14 @@
 import { renderMarkdown } from "@/lib/markdown";
 import { formatDate } from "@/lib/format";
+import { fillPlaceholders, loadPlaceholderValues } from "@/lib/content";
 
-export function ContentPage({ title, content, updatedAt, children }: { title: string; content: string; updatedAt?: Date; children?: React.ReactNode }) {
+export async function ContentPage({ title, content, updatedAt, children }: { title: string; content: string; updatedAt?: Date; children?: React.ReactNode }) {
+  const html = renderMarkdown(fillPlaceholders(content, await loadPlaceholderValues()));
   return (
     <div className="container-x max-w-3xl py-14 sm:py-20">
       <h1 className="h-display text-5xl sm:text-6xl">{title}</h1>
       {updatedAt && <p className="mt-3 text-xs uppercase tracking-[0.16em] text-bone-dim">Mis à jour le {formatDate(updatedAt)}</p>}
-      <div className="prose-shop mt-10" dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+      <div className="prose-shop mt-10" dangerouslySetInnerHTML={{ __html: html }} />
       {children}
     </div>
   );

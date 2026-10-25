@@ -51,6 +51,35 @@ export default async function SettingsAdmin() {
           <Field label="Instagram (https://…)"><input name="instagramUrl" defaultValue={s.instagramUrl ?? ""} className="input" /></Field>
           <Field label="TikTok (https://…)"><input name="tiktokUrl" defaultValue={s.tiktokUrl ?? ""} className="input" /></Field>
         </section>
+        <section className="card grid gap-4 p-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <h2 className="font-semibold">Informations légales</h2>
+            <p className="mt-1 text-xs text-bone-dim">Utilisées dans les mentions légales, les CGV et la politique de confidentialité. Une information vide n&apos;est jamais affichée.</p>
+          </div>
+          <Field label="Raison sociale (ou nom et prénom)"><input name="legalName" defaultValue={s.legalName ?? ""} className="input" /></Field>
+          <Field label="Forme juridique" hint="Ex. micro-entreprise, SAS au capital de 1 000 €"><input name="legalForm" defaultValue={s.legalForm ?? ""} className="input" /></Field>
+          <Field label="Adresse du siège" className="sm:col-span-2"><input name="legalAddress" defaultValue={s.legalAddress ?? ""} className="input" /></Field>
+          <Field label="SIRET"><input name="siret" defaultValue={s.siret ?? ""} className="input" inputMode="numeric" /></Field>
+          <Field label="N° TVA intracommunautaire" hint="Vide si non assujetti"><input name="vatNumber" defaultValue={s.vatNumber ?? ""} className="input" /></Field>
+          <Field label="Directeur de la publication"><input name="publicationDirector" defaultValue={s.publicationDirector ?? ""} className="input" /></Field>
+          <Field label="Médiateur de la consommation" hint="Nom et site du médiateur auquel vous adhérez"><input name="mediator" defaultValue={s.mediator ?? ""} className="input" /></Field>
+          <Field label="Hébergeur" className="sm:col-span-2"><input name="hostInfo" defaultValue={s.hostInfo} className="input" /></Field>
+        </section>
+        <section className="card grid gap-4 p-5 sm:grid-cols-2">
+          <h2 className="font-semibold sm:col-span-2">Retours</h2>
+          <Field label="Délai de retour (jours après réception)" hint="14 jours minimum (droit de rétractation)"><input name="returnDays" type="number" min={14} max={365} defaultValue={s.returnDays} className="input" /></Field>
+          <Field label="Adresse de retour"><input name="returnAddress" defaultValue={s.returnAddress ?? ""} className="input" /></Field>
+        </section>
+        <section className="card p-5">
+          <h2 className="font-semibold">Moyens de paiement affichés</h2>
+          <p className="mt-1 text-xs text-bone-dim">Cochez uniquement ceux réellement activés dans votre tableau de bord Stripe (Paramètres › Moyens de paiement). Rien n&apos;est affiché tant que Stripe n&apos;est pas branché.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            <Check name="payCard" label="Carte bancaire" defaultChecked={s.payCard} />
+            <Check name="payApplePay" label="Apple Pay" defaultChecked={s.payApplePay} />
+            <Check name="payGooglePay" label="Google Pay" defaultChecked={s.payGooglePay} />
+            <Check name="payPaypal" label="PayPal" defaultChecked={s.payPaypal} />
+          </div>
+        </section>
       </ActionForm>
     </div>
   );

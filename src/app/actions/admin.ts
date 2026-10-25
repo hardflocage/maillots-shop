@@ -200,8 +200,17 @@ export async function saveCategory(_: FormState, form: FormData): Promise<FormSt
   const slug = slugify(str(form, "slug") || name);
   const clash = await prisma.category.findUnique({ where: { slug } });
   if (clash && clash.id !== id) return { error: "Une catégorie utilise déjà cette adresse (slug)." };
-  if (id) await prisma.category.update({ where: { id }, data: { ...data, slug } });
-  else await prisma.category.create({ data: { ...data, slug } });
+  let imageUrl: string | null | undefined;
+  try {
+    const image = form.get("image");
+    if (image instanceof File && image.size > 0) imageUrl = await saveImage(image, "collections");
+    if (bool(form, "removeImage")) imageUrl = null;
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Échec de l'envoi de la photo." };
+  }
+  const withImage = imageUrl === undefined ? data : { ...data, imageUrl };
+  if (id) await prisma.category.update({ where: { id }, data: { ...withImage, slug } });
+  else await prisma.category.create({ data: { ...withImage, slug } });
   revalidateShop();
   return { ok: true, message: "Catégorie enregistrée." };
 }
@@ -397,6 +406,20 @@ export async function saveSettings(_: FormState, form: FormData): Promise<FormSt
     stockAlertEmail: str(form, "stockAlertEmail").slice(0, 200) || null,
     instagramUrl: url("instagramUrl"),
     tiktokUrl: url("tiktokUrl"),
+    legalName: str(form, "legalName").slice(0, 120) || null,
+    legalForm: str(form, "legalForm").slice(0, 120) || null,
+    legalAddress: str(form, "legalAddress").slice(0, 300) || null,
+    siret: str(form, "siret").slice(0, 40) || null,
+    vatNumber: str(form, "vatNumber").slice(0, 40) || null,
+    publicationDirector: str(form, "publicationDirector").slice(0, 120) || null,
+    hostInfo: str(form, "hostInfo").slice(0, 300) || "Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, États-Unis",
+    mediator: str(form, "mediator").slice(0, 300) || null,
+    returnDays: Math.min(Math.max(Math.round(Number(str(form, "returnDays")) || 14), 14), 365),
+    returnAddress: str(form, "returnAddress").slice(0, 300) || null,
+    payCard: bool(form, "payCard"),
+    payApplePay: bool(form, "payApplePay"),
+    payGooglePay: bool(form, "payGooglePay"),
+    payPaypal: bool(form, "payPaypal"),
   };
   try {
     const hero = form.get("heroImage");

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { deleteCategory, saveCategory } from "@/app/actions/admin";
 import { CATEGORY_TYPE_LABELS } from "@/lib/labels";
@@ -18,6 +19,13 @@ function CategoryFields({ c }: { c?: Category }) {
       </Field>
       <Field label="Ordre"><input name="sortOrder" type="number" defaultValue={c?.sortOrder ?? 0} className="input" /></Field>
       <Field label="Description (SEO)" className="sm:col-span-4"><input name="description" defaultValue={c?.description ?? ""} className="input" /></Field>
+      <Field label="Photo de la collection" className="sm:col-span-2" hint="Affichée sur l'accueil. Sinon, la photo d'un maillot de la collection est utilisée."><input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif" className="input py-2 text-sm" /></Field>
+      {c?.imageUrl && (
+        <div className="flex items-end gap-4 sm:col-span-2">
+          <div className="relative h-20 w-32 overflow-hidden rounded-lg"><Image src={c.imageUrl} alt="" fill className="object-cover" sizes="128px" /></div>
+          <Check name="removeImage" label="Retirer la photo" />
+        </div>
+      )}
       <div className="flex gap-6 sm:col-span-4">
         <Check name="isActive" label="Active" defaultChecked={c?.isActive ?? true} />
         <Check name="showOnHome" label="Afficher sur l'accueil" defaultChecked={c?.showOnHome ?? true} />
