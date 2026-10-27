@@ -24,7 +24,7 @@ export default async function EditProduct({ params, searchParams }: { params: Pr
       <div>
         <Link href="/admin/produits" className="text-sm text-bone-muted hover:text-bone">← Produits</Link>
         <PageTitle title={product.name}>
-          <Link href={`/maillot/${product.slug}`} target="_blank" className="btn-ghost">Voir sur le site ↗</Link>
+          <Link href={`/maillot/${product.slug}`} target="_blank" className="btn-ghost">{product.isActive ? "Voir sur le site ↗" : "Aperçu (hors ligne) ↗"}</Link>
         </PageTitle>
         {cree && <Alert tone="ok">Produit créé. Vérifiez les photos devant et dos ci-dessous.</Alert>}
         {product.isDemo && <Alert tone="info">Produit de démonstration : enregistrez-le pour le transformer en vrai produit, ou supprimez-le.</Alert>}
