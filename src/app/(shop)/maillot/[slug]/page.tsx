@@ -15,9 +15,17 @@ import { ProductView } from "@/components/product/ProductView";
 import { ProductRail } from "@/components/product/ProductRail";
 import { IconStar } from "@/components/ui/Icons";
 
-const getProduct = cache((slug: string) =>
+/** Un maillot hors ligne n'est visible que par un admin (aperçu avant mise en ligne). */
+const getProduct = cache(async (slug: string) => {
+  const product = await findProduct(slug, true);
+  if (product) return product;
+  const user = await getCurrentUser();
+  return user?.role === "ADMIN" ? findProduct(slug, false) : null;
+});
+
+const findProduct = (slug: string, activeOnly: boolean) =>
   prisma.product.findFirst({
-    where: { slug, isActive: true },
+    where: { slug, ...(activeOnly ? { isActive: true } : {}) },
     include: {
       images: true,
       variants: { orderBy: { sortOrder: "asc" } },
@@ -25,8 +33,7 @@ const getProduct = cache((slug: string) =>
       categories: { where: { isActive: true }, select: { id: true, name: true, slug: true } },
       reviews: { where: { status: "APPROVED" }, include: { user: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 20 },
     },
-  }),
-);
+  });
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const p = await getProduct((await params).slug);
@@ -38,6 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description,
     alternates: { canonical: `/maillot/${p.slug}` },
     openGraph: { title: p.name, description, images: img ? [{ url: img }] : undefined },
+    ...(p.isActive ? {} : { robots: { index: false, follow: false } }),
   };
 }
 
@@ -118,6 +126,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <div className="container-x pt-6 sm:pt-10">
+        {!product.isActive && (
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gold/40 bg-gold/10 px-5 py-3 text-sm text-gold">
+            <span>Aperçu admin : ce maillot est hors ligne, les clients ne le voient pas.</span>
+            <Link href={`/admin/produits/${product.id}`} className="underline underline-offset-4">Modifier dans l&apos;admin</Link>
+          </div>
+        )}
         <ProductView
           header={header}
           isFavorite={isFavorite}
